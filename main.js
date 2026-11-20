@@ -9,6 +9,8 @@ loadSprite("checkmark", "./sprites/checkmark.png");
 // debug.inspect = true;
 
 scene("setings_targets", () => {
+    let track_width = 200;
+    let speed_number = 1;
     const setings_targets = add([
         rect(400, height() - 400),
         pos(center()),
@@ -55,7 +57,42 @@ scene("setings_targets", () => {
         anchor("left"),
         {type: false},
     ]);
-
+    const move = setings_targets.add([
+        pos(-130, -25),
+        text("Move"),
+        anchor("center"),
+    ]);
+    const move_mark_hitbox = move.add([
+        rect(40, 40, { fill: false }),
+        pos(55, 0),
+        opacity(0.85),
+        outline(2.8, WHITE),
+        anchor("left"),
+        area(),
+    ]);
+    const move_mark = move_mark_hitbox.add([
+        sprite("checkmark"),
+        pos(18, 9),
+        opacity(0),
+        scale(2.9),
+        anchor("center"),
+    ]);
+    const strip = add([
+        rect(track_width, 10),
+        pos(center().x + 80, center().y - 25),
+        anchor("center"),
+    ]);
+    const twister = add([
+        rect(28, 28),
+        pos(center().x, center().y - 25),
+        anchor("center"),
+        area(),
+    ]);
+    const speed_text = setings_targets.add([
+        text(`${speed_number}`),
+        pos(150, -60),
+        anchor("left"),
+    ]);
     const button_play = setings_targets.add([
         rect(290, 50),
         pos(0, 107),
@@ -85,6 +122,36 @@ scene("setings_targets", () => {
         targets_text_input.type = true
         time_text_input.type = false;
     });
+    move_mark_hitbox.onClick(() => {
+        switch(move_mark.opacity)
+        {
+            case 0:
+                move_mark.opacity = 1;
+                break;
+            case 1:
+                move_mark.opacity = 0;
+                break;
+        }
+    });
+    let dragging = false;
+    twister.onMousePress(() => {
+        if(twister.isHovering())
+            dragging = true;
+        else
+            dragging = false;
+    });
+    onMouseRelease(() => {
+        dragging = false;
+    });
+    onUpdate(() => {
+        if (dragging) {
+            const leftEdge = strip.pos.x - track_width / 2;
+            const rightEdge = strip.pos.x + track_width / 2;
+            twister.pos = vec2(clamp(mousePos().x, leftEdge, rightEdge), twister.pos.y);
+            speed_number = Math.round(map(twister.pos.x, leftEdge, rightEdge, 1, 10));
+            speed_text.text = `${speed_number}`;
+        }
+    });
     onCharInput((ch) => {
         if(ch >= "0" && ch <= "9" && time_text_input.text.length < 4 && time_text_input.type == true)
                 time_text_input.text += ch;
@@ -98,6 +165,7 @@ scene("setings_targets", () => {
             targets_text_input.text = targets_text_input.text.substring(0, targets_text_input.text.length - 1);
         }
     });
+    
 });
 
 scene("game", (time, targets) => {
