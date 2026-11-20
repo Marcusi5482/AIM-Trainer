@@ -3,7 +3,10 @@ import "kaplay/global";
 
 kaplay({ topMostOnlyActivate: true });
 
-debug.inspect = true;
+loadRoot("./");
+loadSprite("checkmark", "./sprites/checkmark.png");
+
+// debug.inspect = true;
 
 scene("setings_targets", () => {
     const setings_targets = add([
@@ -13,12 +16,44 @@ scene("setings_targets", () => {
         opacity(0.85),
         anchor("center"),
     ]);
-
-    setings_targets.add([
+    const time_text = setings_targets.add([
+        pos(0, -116),
         text("Time:"),
-        pos(0, -126),
-        textInput(),
-        anchor("center"),
+        anchor("right"),
+    ]);
+    const time_input = time_text.add([
+        rect(90, 40, { fill: false }),
+        pos(2, 0),
+        opacity(0.85),
+        outline(2.8, WHITE),
+        anchor("left"),
+        area(),
+    ]);
+    const time_text_input = time_input.add([
+        text(""),
+        pos(1, 0),
+        anchor("left"),
+        {type: false},
+    ]);
+
+    const targets_text = setings_targets.add([
+        pos(0, -70),
+        text("Targets:"),
+        anchor("right"),
+    ]);
+    const targets_input = targets_text.add([
+        rect(90, 40, { fill: false }),
+        pos(2, 0),
+        opacity(0.85),
+        outline(2.8, WHITE),
+        anchor("left"),
+        area(),
+    ]);
+    const targets_text_input = targets_input.add([
+        text(""),
+        pos(1, 0),
+        anchor("left"),
+        {type: false},
     ]);
 
     const button_play = setings_targets.add([
@@ -38,17 +73,39 @@ scene("setings_targets", () => {
         opacity(0.85),
         anchor("bot"),
     ]);
+
     onClick("button_play", () => {
-        go("game");
+        go("game", Number(time_text_input.text), Number(targets_text_input.text));
+    });
+    time_input.onClick(() => {
+        time_text_input.type = true;
+        targets_text_input.type = false;
+    });
+    targets_input.onClick(() => {
+        targets_text_input.type = true
+        time_text_input.type = false;
+    });
+    onCharInput((ch) => {
+        if(ch >= "0" && ch <= "9" && time_text_input.text.length < 4 && time_text_input.type == true)
+                time_text_input.text += ch;
+        else if(ch >= "0" && ch <= "9" && targets_text_input.text.length < 4 && targets_text_input.type == true)
+                targets_text_input.text += ch;
+    });
+    onKeyPress("backspace", () => {
+        if(time_text_input.type == true && time_text_input.text.length > 0) {
+            time_text_input.text = time_text_input.text.substring(0, time_text_input.text.length - 1);
+        } else if(targets_text_input.type == true && targets_text_input.text.length > 0) {
+            targets_text_input.text = targets_text_input.text.substring(0, targets_text_input.text.length - 1);
+        }
     });
 });
 
-scene("game", () => {
+scene("game", (time, targets) => {
+    const max_time = time;
     let count_hit = 0;
-    let tochnost = 100;
+    let tochnost = 0;
     let mistakes = 0;
     let clicks = 0;
-    let time = 10;
     const tochnost_text = add([
         text(`Accuracy:${tochnost}`),
         color(BLACK),
@@ -72,7 +129,8 @@ scene("game", () => {
         area(),
     ]);
 
-    spawn_target();
+    for(let i = 0; i < targets; i++)
+        spawn_target();
 
     onClick("target", (target) => {
         count_hit++;
@@ -92,10 +150,10 @@ scene("game", () => {
         tochnost_text.text = `Accuracy:${tochnost}`;
     });
 
-    onUpdate("target", (targets) => {
+    onUpdate(() => {
         time -= dt();
         if(time <= 0)
-            go("game_over", 10, tochnost, count_hit, mistakes);
+            go("game_over", max_time, tochnost, count_hit, mistakes);
         time_text.text = `Time:${Math.round(time)}`;
 
     });
@@ -104,9 +162,6 @@ scene("game", () => {
         promah.height = height();
         promah.pos = center();
         time_text.pos = vec2(width() - 10, 10);
-    });
-    onKeyDown("t", () => {
-        go("game_over", 10, tochnost, count_hit, mistakes);
     });
 });
 
@@ -131,7 +186,7 @@ scene("game_over", (time, accuracy, hit, misseds) => {
         anchor("top"),
     ]);
     game_over_text.add([
-        text(`Time:${time}`),
+        text(`Time:${Math.round(time)}`),
         pos(0, 29),
         anchor("center"),
     ]);
@@ -168,7 +223,7 @@ scene("game_over", (time, accuracy, hit, misseds) => {
         anchor("bot"),
     ]);
     onClick("button_ok", () => {
-        
+        go("setings_targets");
     });
 });
 
