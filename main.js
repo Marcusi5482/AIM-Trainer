@@ -1,5 +1,4 @@
-import kaplay from "kaplay";
-import "kaplay/global";
+import kaplay from "https://unpkg.com/kaplay@4000.0.0-alpha.27.1/dist/kaplay.mjs";
 
 kaplay({ topMostOnlyActivate: true });
 
